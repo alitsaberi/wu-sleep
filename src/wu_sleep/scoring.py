@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Literal
+from typing import get_args, Literal
 
 import numpy as np
 
@@ -12,6 +12,14 @@ from somnio.tasks.sleep_scoring.score import score_sleep_stages as somnio_score_
 from wu_sleep.preprocessing import preprocess_eeg
 
 OutputMode = Literal["probs", "labels"]
+_VALID_OUTPUTS = frozenset(get_args(OutputMode))
+
+
+def _validate_output(output: str) -> OutputMode:
+    if output not in _VALID_OUTPUTS:
+        allowed = ", ".join(f'"{mode}"' for mode in sorted(_VALID_OUTPUTS))
+        raise ValueError(f"output must be one of {allowed}, got {output!r}")
+    return output
 
 
 def fuse_probabilities(*probabilities: np.ndarray) -> np.ndarray:
@@ -48,6 +56,7 @@ def _score_preprocessed(
     model: OnnxSleepScoringModel,
     output: OutputMode = "probs",
 ) -> np.ndarray:
+    _validate_output(output)
     if ts.n_channels != 1:
         raise ValueError(
             f"expected a single-channel TimeSeries, got n_channels={ts.n_channels}"
@@ -119,6 +128,7 @@ def score_sleep_stages(
           multiple channels, fused and renormalized posteriors.
         - If ``output="labels"``: object array of shape ``(n_epochs,)``.
     """
+    _validate_output(output)
     model = OnnxSleepScoringModel.load(model_path)
     ts = preprocess_eeg(values, sample_rate_hz, channel_names=channel_names)
 
