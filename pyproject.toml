@@ -12,12 +12,12 @@ dependencies = [
     "somnio[signal,schemas,onnx]>=0.2.0b3",
 ]
 
-[build-system]
-requires = ["uv_build>=0.9.13,<0.10"]
-build-backend = "uv_build"
-
-[dependency-groups]
-dev = [
+[project.optional-dependencies]
+examples = [
     "matplotlib>=3.10.9",
     "pyedflib>=0.1.42",
 ]
+
+[build-system]
+requires = ["uv_build>=0.9.13,<0.10"]
+build-backend = "uv_build"

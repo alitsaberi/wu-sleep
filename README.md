@@ -21,16 +21,23 @@ The model itself is single-channel. It processes each EEG derivation independent
 
 ## Installation
 
-Using `uv`:
+Using [uv](https://docs.astral.sh/uv/getting-started/installation/):
 
 ```bash
 uv sync
+```
+
+With example dependencies (EDF I/O and plotting):
+
+```bash
+uv sync --extra examples
 ```
 
 Or with pip:
 
 ```bash
 pip install .
+pip install ".[examples]"
 ```
 
 ## EEG input
@@ -171,12 +178,16 @@ Minimal synthetic demo:
 
 ```bash
 uv run python examples/score_synthetic.py
+# or
+python examples/score_synthetic.py
 ```
 
 Full-night EEG-only example with LEFT, RIGHT, and fused scoring, plus expert ground truth:
 
 ```bash
-uv run --group dev python examples/score_example.py
+uv run --extra examples python examples/score_example.py
+# or, after pip install ".[examples]"
+python examples/score_example.py
 ```
 
 Data and outputs:

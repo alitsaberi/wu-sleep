@@ -1514,18 +1514,17 @@ dependencies = [
     { name = "somnio", extra = ["onnx", "schemas", "signal"] },
 ]
 
-[package.dev-dependencies]
-dev = [
+[package.optional-dependencies]
+examples = [
     { name = "matplotlib", version = "3.10.9", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
     { name = "matplotlib", version = "3.11.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11'" },
     { name = "pyedflib" },
 ]
 
 [package.metadata]
-requires-dist = [{ name = "somnio", extras = ["signal", "schemas", "onnx"], specifier = ">=0.2.0b3" }]
-
-[package.metadata.requires-dev]
-dev = [
-    { name = "matplotlib", specifier = ">=3.10.9" },
-    { name = "pyedflib", specifier = ">=0.1.42" },
+requires-dist = [
+    { name = "matplotlib", marker = "extra == 'examples'", specifier = ">=3.10.9" },
+    { name = "pyedflib", marker = "extra == 'examples'", specifier = ">=0.1.42" },
+    { name = "somnio", extras = ["signal", "schemas", "onnx"], specifier = ">=0.2.0b3" },
 ]
+provides-extras = ["examples"]

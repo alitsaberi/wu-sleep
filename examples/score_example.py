@@ -5,7 +5,7 @@ hypnograms for the full-night EEG-only example recording.
 
 Run with::
 
-    uv run --group dev python examples/score_example.py
+    uv run --extra examples python examples/score_example.py
 """
 
 from __future__ import annotations
