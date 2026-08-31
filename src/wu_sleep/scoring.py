@@ -26,6 +26,10 @@ def run_sleep_scoring(
 ) -> np.ndarray:
     """Run sleep-stage inference on a raw (n_samples, n_channels) array.
 
+    Recordings are scored in non-overlapping 30 s epochs. If the length is not
+    an integer number of 30 s epochs after preprocessing, the final partial
+    epoch is edge-padded to 30 s and still scored.
+
     Args:
         values: Signal array, shape ``(n_samples, n_channels)``.
         sample_rate_hz: Nominal sample rate of ``values`` in Hz.
