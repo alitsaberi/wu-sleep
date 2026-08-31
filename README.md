@@ -1,12 +1,27 @@
 # WU-Sleep
 
-Inference API for WU-Sleep, a domain-adapted sleep staging model for forehead wearable EEG.
+WU-Sleep is a domain-adapted sleep-staging model for single-channel forehead wearable EEG. It adapts U-Sleep, originally developed using conventional polysomnography, to the different electrode placement and signal characteristics in wearable forehead recordings.
+
+This repository provides the fine-tuned model together with a lightweight Python interface for preprocessing EEG, running inference, and combining predictions from multiple forehead channels.
+
+## Model description
+
+The model itself is single-channel. It processes each EEG derivation independently and predicts one of five sleep stages for every 30-second epoch. When multiple channels are provided, their posterior probabilities are summed and renormalized per epoch before the final label is assigned.
+
+| Property              | Value                               |
+| --------------------- | ----------------------------------- |
+| Input                 | Single-channel bipolar forehead EEG |
+| Context window        | 35 consecutive 30-second epochs     |
+| Prediction resolution | 30 seconds                          |
+| Output classes        | `W`, `N1`, `N2`, `N3`, `REM`        |
 
 ## Requirements
 
 - **Python:** `>=3.10`
 
-## Install
+## Installation
+
+Using `uv`:
 
 ```bash
 uv sync
@@ -18,70 +33,132 @@ Or with pip:
 pip install .
 ```
 
-## Input
+## EEG input
 
-Pass EEG as `(n_samples, n_channels)`.
+Pass EEG as a NumPy array with shape:
 
-- **Single channel** — one forehead derivation, shape `(n_samples, 1)`.
-- **Multiple channels** — each derivation as a column. Each column is scored independently; posteriors are summed and renormalized per epoch. **Column order does not matter.**
+```text
+(n_samples, n_channels)
+```
 
-WU-Sleep is intended for **forehead wearable EEG** with bipolar derivations similar to those used in training (e.g. left/right frontal sites referenced to Fpz). The reference montage from the preprint (Hypnodyne ZMax) is F7–Fpz and F8–Fpz. Similar montages on other devices may work, but performance outside the validated setting has not been established.
+The typical configurations are:
 
-**Units.** Preprocessing applies per-channel robust scaling (median 0, IQR 1) after resampling and band-pass filtering. The API does not require a specific voltage unit (µV, mV, V, etc.) as long as **each channel uses a consistent unit** throughout the recording.
+- **Single channel:** one bipolar forehead derivation, such as `F7-Fpz` or `F8-Fpz`, with shape `(n_samples, 1)`.
+- **Multiple channels:** each derivation supplied as a separate column. Each channel is scored independently, and the posteriors are combined per epoch. Column order does not affect the result.
 
-**Preprocessing** (applied once to all channels before scoring): resample to 128 Hz, 0.3–35 Hz band-pass filter, robust scaling, IQR clipping (see the preprint, Section 2.2).
+The reference montage used to develop and evaluate WU-Sleep consists of the following Hypnodyne ZMax derivations:
+
+```text
+F7 - Fpz
+F8 - Fpz
+```
+
+The API does not construct or re-reference EEG derivations. Input signals must already represent the intended bipolar channels. The `channel_names` argument is descriptive metadata only.
+
+### Other EEG systems
+
+WU-Sleep is not tied to the ZMax file format or its channel names. It can process recordings from other EEG systems when they provide comparable bipolar forehead signals, particularly derivations between a lateral forehead electrode and a midline forehead reference.
+
+Differences in electrode placement, reference location, polarity, electrode material, amplifier characteristics, or recording environment may affect performance. Comparable signals should use the same polarity as the reference montage:
+
+```text
+lateral forehead electrode - midline forehead reference
+```
+
+Performance on other devices and montages has not yet been independently established.
+
+### Units
+
+Preprocessing applies robust scaling independently to each channel after resampling and filtering. The API therefore does not require a specific voltage unit, such as µV, mV, or V, provided that each channel uses a consistent unit throughout the recording.
+
+### Preprocessing
+
+The inference pipeline applies:
+
+1. Resampling to 128 Hz.
+2. Band-pass filtering between 0.3 and 35 Hz.
+3. Per-channel robust scaling to a median of 0 and an IQR of 1.
+4. IQR-based clipping.
+
+An original sampling rate of at least 128 Hz is recommended.
 
 ## Output
 
-Each recording is scored in non-overlapping **30 s epochs**. If the signal length is not an integer number of 30 s epochs after preprocessing, the final partial epoch is edge-padded to 30 s and still scored.
+Recordings are scored in non-overlapping 30-second epochs. If the preprocessed signal length is not an integer number of epochs, the final partial epoch is edge-padded to 30 seconds and still scored.
 
-`score_sleep_stages(..., output="probs")` returns a float64 array of shape `(n_epochs, n_classes)`. Rows sum to 1.
+```python
+score_sleep_stages(..., output="probs")
+```
 
-`score_sleep_stages(..., output="labels")` returns an object array of shape `(n_epochs,)` with one label per epoch.
+returns a `float64` array with shape `(n_epochs, n_classes)`. Each row contains normalized class probabilities and sums to 1.
 
-**Class order** (columns of `probs`, index order for argmax):
+```python
+score_sleep_stages(..., output="labels")
+```
+
+returns an object array with shape `(n_epochs,)`, containing one sleep-stage label per epoch.
+
+The probability columns follow this order:
+
 
 | Index | Label |
-|-------|-------|
-| 0 | W |
-| 1 | N1 |
-| 2 | N2 |
-| 3 | N3 |
-| 4 | REM |
+| ----- | ----- |
+| 0     | `W`   |
+| 1     | `N1`  |
+| 2     | `N2`  |
+| 3     | `N3`  |
+| 4     | `REM` |
 
-This matches `class_labels` in `model/wu-sleep.yaml`.
 
-## Model
+This order matches `class_labels` in `model/wu-sleep.yaml`.
 
-The fine-tuned ONNX weights ship in this repository as **`model/wu-sleep.onnx`**, with sidecar metadata in **`model/wu-sleep.yaml`**. Clone the repo or download a release tag to obtain both files.
+## Model files
 
-When calling `score_sleep_stages`, the default `model_path` is `model/wu-sleep.onnx` (relative to your working directory). Pass an absolute path if you run from elsewhere.
+The fine-tuned model and its metadata are included in this repository:
+
+```text
+model/
+├── wu-sleep.onnx
+└── wu-sleep.yaml
+```
+
+Clone the repository or download a versioned release to obtain both files.
+
+The default model path is:
+
+```text
+model/wu-sleep.onnx
+```
+
+This path is resolved relative to the current working directory. Pass an absolute path when running the API from another location.
 
 ## Usage
 
 ```python
 from wu_sleep import score_sleep_stages
 
-# Single channel
+# Single-channel scoring
 labels = score_sleep_stages(
     eeg[:, :1],
     sample_rate_hz=256.0,
     model_path="model/wu-sleep.onnx",
-    channel_names=["EEG_L"],
+    channel_names=["F7-Fpz"],
     output="labels",
 )
 
-# Multiple channels (order arbitrary)
+# Two-channel scoring with posterior fusion
 labels = score_sleep_stages(
     eeg,
     sample_rate_hz=256.0,
     model_path="model/wu-sleep.onnx",
-    channel_names=["EEG_L", "EEG_R"],
+    channel_names=["F7-Fpz", "F8-Fpz"],
     output="labels",
 )
 ```
 
 ## Example
+
+Run the included example with:
 
 ```bash
 uv run python examples/score_recording.py
@@ -99,8 +176,8 @@ WU-Sleep builds on the U-Sleep architecture and was fine-tuned from the SLEEPYLA
 
 When describing the model architecture or pretrained checkpoint, please also cite the corresponding upstream work:
 
-* **U-Sleep:** Perslev, M., Darkner, S., Kempfner, L., Nikolic, M., Jennum, P. J., & Igel, C. (2021). U-Sleep: resilient high-frequency sleep staging. *npj Digital Medicine*, 4, 72. https://doi.org/10.1038/s41746-021-00440-5
-* **SLEEPYLAND:** Rossi, A. D., Metaldi, M., Bechny, M., et al. (2026). SLEEPYLAND: trust begins with fair evaluation of automatic sleep staging models. *npj Digital Medicine*, 9, 55. https://doi.org/10.1038/s41746-025-02237-2
+- **U-Sleep:** Perslev, M., Darkner, S., Kempfner, L., Nikolic, M., Jennum, P. J., & Igel, C. (2021). U-Sleep: resilient high-frequency sleep staging. *npj Digital Medicine*, 4, 72. [https://doi.org/10.1038/s41746-021-00440-5](https://doi.org/10.1038/s41746-021-00440-5)
+- **SLEEPYLAND:** Rossi, A. D., Metaldi, M., Bechny, M., et al. (2026). SLEEPYLAND: trust begins with fair evaluation of automatic sleep staging models. *npj Digital Medicine*, 9, 55. [https://doi.org/10.1038/s41746-025-02237-2](https://doi.org/10.1038/s41746-025-02237-2)
 
 ## License
 
@@ -108,6 +185,6 @@ This repository is released under the [MIT License](LICENSE).
 
 ## TODO
 
-- [ ] Release data preparation, training, and evaluation code
-- [ ] Integrate artifact detection at inference
-
+- [ ] Validate WU-Sleep on other forehead EEG devices and comparable bipolar montages.
+- [ ] Release the data-preparation, training, and evaluation code.
+- [ ] Integrate artifact detection into the inference pipeline.
