@@ -1,3 +1,6 @@
-from wu_sleep.scoring import OutputMode, run_sleep_scoring
+from wu_sleep.scoring import fuse_probabilities, score_sleep_stages
 
-__all__ = ["OutputMode", "run_sleep_scoring"]
+__all__ = [
+    "fuse_probabilities",
+    "score_sleep_stages",
+]

@@ -1,6 +1,6 @@
 # WU-Sleep
 
-Inference API for WU-Sleep, a domain-adapted sleep staging model for single-channel forehead wearable EEG.
+Inference API for WU-Sleep, a domain-adapted sleep staging model for forehead wearable EEG.
 
 ## Install
 
@@ -14,16 +14,35 @@ Or with pip:
 pip install .
 ```
 
+## Input
+
+Pass EEG as `(n_samples, n_channels)`.
+
+- **Single channel** — one forehead derivation, shape `(n_samples, 1)`.
+- **Multiple channels** — each derivation as a column. Each column is scored independently; probabilities are summed per epoch. **Column order does not matter.**
+
+WU-Sleep is intended for **forehead wearable EEG** with bipolar derivations similar to those used in training (e.g. left/right frontal sites referenced to Fpz). The reference montage from the preprint (Hypnodyne ZMax) is F7–Fpz and F8–Fpz. Similar montages on other devices may work, but performance outside the validated setting has not been established.
+
 ## Usage
 
 ```python
-import numpy as np
-from wu_sleep import run_sleep_scoring
+from wu_sleep import score_sleep_stages
 
-labels = run_sleep_scoring(
-    eeg,  # shape (n_samples, 1)
+# Single channel
+labels = score_sleep_stages(
+    eeg[:, :1],
     sample_rate_hz=256.0,
     model_path="model/model.onnx",
+    channel_names=["EEG_L"],
+    output="labels",
+)
+
+# Multiple channels (order arbitrary)
+labels = score_sleep_stages(
+    eeg,
+    sample_rate_hz=256.0,
+    model_path="model/model.onnx",
+    channel_names=["EEG_L", "EEG_R"],
     output="labels",
 )
 ```
