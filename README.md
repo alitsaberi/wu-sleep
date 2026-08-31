@@ -56,3 +56,14 @@ Recordings are scored in non-overlapping 30 s epochs at 128 Hz. If the signal le
 ```bash
 uv run python examples/score_recording.py
 ```
+
+## License
+
+This repository is released under the [MIT License](LICENSE).
+
+## Attribution
+
+WU-Sleep builds on the U-Sleep architecture and was fine-tuned from U-Sleep weights distributed via SLEEPYLAND. If you use this software or model, please cite WU-Sleep and acknowledge the upstream work:
+
+- **U-Sleep** — Perslev, M., Darkner, S., Kempfner, L., Nikolic, M., Jennum, P. J., & Igel, C. (2021). U-Sleep: resilient high-frequency sleep staging. *npj Digital Medicine*, 4, 72. [https://doi.org/10.1038/s41746-021-00440-5](https://doi.org/10.1038/s41746-021-00440-5)
+- **SLEEPYLAND** — Rossi, A. D., Metaldi, M., Bechny, M., Filchenko, I., van der Meer, J., Schmidt, M. H., Bassetti, C. L. A., Tzovara, A., Faraci, F. D., & Fiorillo, L. (2026). SLEEPYLAND: trust begins with fair evaluation of automatic sleep staging models. *npj Digital Medicine*, 9, 55. [https://doi.org/10.1038/s41746-025-02237-2](https://doi.org/10.1038/s41746-025-02237-2)
