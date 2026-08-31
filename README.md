@@ -2,6 +2,10 @@
 
 Inference API for WU-Sleep, a domain-adapted sleep staging model for forehead wearable EEG.
 
+## Requirements
+
+- **Python:** `>=3.10`
+
 ## Install
 
 ```bash
@@ -22,6 +26,30 @@ Pass EEG as `(n_samples, n_channels)`.
 - **Multiple channels** — each derivation as a column. Each column is scored independently; posteriors are summed and renormalized per epoch. **Column order does not matter.**
 
 WU-Sleep is intended for **forehead wearable EEG** with bipolar derivations similar to those used in training (e.g. left/right frontal sites referenced to Fpz). The reference montage from the preprint (Hypnodyne ZMax) is F7–Fpz and F8–Fpz. Similar montages on other devices may work, but performance outside the validated setting has not been established.
+
+**Units.** Preprocessing applies per-channel robust scaling (median 0, IQR 1) after resampling and band-pass filtering. The API does not require a specific voltage unit (µV, mV, V, etc.) as long as **each channel uses a consistent unit** throughout the recording.
+
+**Preprocessing** (applied once to all channels before scoring): resample to 128 Hz, 0.3–35 Hz band-pass filter, robust scaling, IQR clipping (see the preprint, Section 2.2).
+
+## Output
+
+Each recording is scored in non-overlapping **30 s epochs**. If the signal length is not an integer number of 30 s epochs after preprocessing, the final partial epoch is edge-padded to 30 s and still scored.
+
+`score_sleep_stages(..., output="probs")` returns a float64 array of shape `(n_epochs, n_classes)`. Rows sum to 1.
+
+`score_sleep_stages(..., output="labels")` returns an object array of shape `(n_epochs,)` with one label per epoch.
+
+**Class order** (columns of `probs`, index order for argmax):
+
+| Index | Label |
+|-------|-------|
+| 0 | W |
+| 1 | N1 |
+| 2 | N2 |
+| 3 | N3 |
+| 4 | REM |
+
+This matches `class_labels` in `model/model.yaml`.
 
 ## Usage
 
@@ -49,21 +77,33 @@ labels = score_sleep_stages(
 
 Download `model.onnx` from Hugging Face and place it in `model/` alongside `model.yaml`.
 
-Recordings are scored in non-overlapping 30 s epochs at 128 Hz. If the signal length is not an integer number of 30 s epochs after preprocessing, the final partial epoch is edge-padded to 30 s and still scored.
-
 ## Example
 
 ```bash
 uv run python examples/score_recording.py
 ```
 
+## Citation
+
+If you use WU-Sleep in your research, please cite:
+
+> **WU-Sleep citation will be added when the preprint becomes available.**
+
+## Model lineage
+
+WU-Sleep builds on the U-Sleep architecture and was fine-tuned from the SLEEPYLAND `u-sleep-nsrr-2024_eeg` checkpoint.
+
+When describing the model architecture or pretrained checkpoint, please also cite the corresponding upstream work:
+
+* **U-Sleep:** Perslev, M., Darkner, S., Kempfner, L., Nikolic, M., Jennum, P. J., & Igel, C. (2021). U-Sleep: resilient high-frequency sleep staging. *npj Digital Medicine*, 4, 72. https://doi.org/10.1038/s41746-021-00440-5
+* **SLEEPYLAND:** Rossi, A. D., Metaldi, M., Bechny, M., et al. (2026). SLEEPYLAND: trust begins with fair evaluation of automatic sleep staging models. *npj Digital Medicine*, 9, 55. https://doi.org/10.1038/s41746-025-02237-2
+
 ## License
 
 This repository is released under the [MIT License](LICENSE).
 
-## Attribution
+## TODO
 
-WU-Sleep builds on the U-Sleep architecture and was fine-tuned from U-Sleep weights distributed via SLEEPYLAND. If you use this software or model, please cite WU-Sleep and acknowledge the upstream work:
+- [ ] Release data preparation, training, and evaluation code
+- [ ] Integrate artifact detection at inference
 
-- **U-Sleep** — Perslev, M., Darkner, S., Kempfner, L., Nikolic, M., Jennum, P. J., & Igel, C. (2021). U-Sleep: resilient high-frequency sleep staging. *npj Digital Medicine*, 4, 72. [https://doi.org/10.1038/s41746-021-00440-5](https://doi.org/10.1038/s41746-021-00440-5)
-- **SLEEPYLAND** — Rossi, A. D., Metaldi, M., Bechny, M., Filchenko, I., van der Meer, J., Schmidt, M. H., Bassetti, C. L. A., Tzovara, A., Faraci, F. D., & Fiorillo, L. (2026). SLEEPYLAND: trust begins with fair evaluation of automatic sleep staging models. *npj Digital Medicine*, 9, 55. [https://doi.org/10.1038/s41746-025-02237-2](https://doi.org/10.1038/s41746-025-02237-2)
