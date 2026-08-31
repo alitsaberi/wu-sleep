@@ -15,10 +15,12 @@ OutputMode = Literal["probs", "labels"]
 
 
 def fuse_probabilities(*probabilities: np.ndarray) -> np.ndarray:
-    """Sum posterior probabilities from independently scored channels.
+    """Fuse posterior probabilities from independently scored channels.
 
-    Each array must have shape ``(n_epochs, n_classes)``. Fusion is
-    order-invariant (see WU-Sleep preprint, Section 2.8).
+    Channel posteriors are summed per epoch, then renormalized to sum to 1.
+    Fusion is order-invariant and matches the WU-Sleep preprint (Section 2.8).
+
+    Each input array must have shape ``(n_epochs, n_classes)``.
     """
     if len(probabilities) < 1:
         raise ValueError("at least one probability array is required")
@@ -31,7 +33,13 @@ def fuse_probabilities(*probabilities: np.ndarray) -> np.ndarray:
                 f"probability arrays must have the same shape, got {reference} and "
                 f"{arr.shape} at index {i}"
             )
-    return sum(arrays)
+
+    fused = sum(arrays)
+    if len(arrays) == 1:
+        return fused
+
+    row_sums = fused.sum(axis=1, keepdims=True)
+    return fused / row_sums
 
 
 def _score_preprocessed(
@@ -83,8 +91,8 @@ def score_sleep_stages(
     """Run sleep-stage inference on forehead wearable EEG.
 
     Pass raw EEG as ``(n_samples, n_channels)``. The underlying model is
-    single-channel. Each column is scored independently; posterior probabilities
-    are summed per 30 s epoch (column order does not matter).
+    single-channel. Each column is scored independently; channel posteriors are
+    summed and renormalized per 30 s epoch (column order does not matter).
 
     All channels are preprocessed together once (resample, filter, scale, clip),
     then each column is scored separately.
@@ -107,6 +115,8 @@ def score_sleep_stages(
 
     Returns:
         - If ``output="probs"``: float64 array of shape ``(n_epochs, n_classes)``.
+          Rows sum to 1. With one channel, these are the model posteriors; with
+          multiple channels, fused and renormalized posteriors.
         - If ``output="labels"``: object array of shape ``(n_epochs,)``.
     """
     model = OnnxSleepScoringModel.load(model_path)

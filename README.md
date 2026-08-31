@@ -19,7 +19,7 @@ pip install .
 Pass EEG as `(n_samples, n_channels)`.
 
 - **Single channel** — one forehead derivation, shape `(n_samples, 1)`.
-- **Multiple channels** — each derivation as a column. Each column is scored independently; probabilities are summed per epoch. **Column order does not matter.**
+- **Multiple channels** — each derivation as a column. Each column is scored independently; posteriors are summed and renormalized per epoch. **Column order does not matter.**
 
 WU-Sleep is intended for **forehead wearable EEG** with bipolar derivations similar to those used in training (e.g. left/right frontal sites referenced to Fpz). The reference montage from the preprint (Hypnodyne ZMax) is F7–Fpz and F8–Fpz. Similar montages on other devices may work, but performance outside the validated setting has not been established.
 
