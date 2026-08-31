@@ -49,7 +49,13 @@ Each recording is scored in non-overlapping **30 s epochs**. If the signal lengt
 | 3 | N3 |
 | 4 | REM |
 
-This matches `class_labels` in `model/model.yaml`.
+This matches `class_labels` in `model/wu-sleep.yaml`.
+
+## Model
+
+The fine-tuned ONNX weights ship in this repository as **`model/wu-sleep.onnx`**, with sidecar metadata in **`model/wu-sleep.yaml`**. Clone the repo or download a release tag to obtain both files.
+
+When calling `score_sleep_stages`, the default `model_path` is `model/wu-sleep.onnx` (relative to your working directory). Pass an absolute path if you run from elsewhere.
 
 ## Usage
 
@@ -60,7 +66,7 @@ from wu_sleep import score_sleep_stages
 labels = score_sleep_stages(
     eeg[:, :1],
     sample_rate_hz=256.0,
-    model_path="model/model.onnx",
+    model_path="model/wu-sleep.onnx",
     channel_names=["EEG_L"],
     output="labels",
 )
@@ -69,13 +75,11 @@ labels = score_sleep_stages(
 labels = score_sleep_stages(
     eeg,
     sample_rate_hz=256.0,
-    model_path="model/model.onnx",
+    model_path="model/wu-sleep.onnx",
     channel_names=["EEG_L", "EEG_R"],
     output="labels",
 )
 ```
-
-Download `model.onnx` from Hugging Face and place it in `model/` alongside `model.yaml`.
 
 ## Example
 

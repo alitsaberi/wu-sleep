@@ -93,7 +93,7 @@ def score_sleep_stages(
     values: np.ndarray,
     *,
     sample_rate_hz: float,
-    model_path: str | Path = Path("model/model.onnx"),
+    model_path: str | Path = Path("model/wu-sleep.onnx"),
     output: OutputMode = "probs",
     channel_names: list[str] | None = None,
 ) -> np.ndarray:
