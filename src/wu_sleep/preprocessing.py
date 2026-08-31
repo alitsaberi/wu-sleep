@@ -49,7 +49,7 @@ def preprocess_eeg(
     """Preprocess raw EEG to match the WU-Sleep training pipeline.
 
     Applies resampling to 128 Hz, 0.3–35 Hz band-pass filtering, robust scaling,
-    and IQR clipping (see the WU-Sleep preprint, Section 2.2).
+    and IQR clipping.
     """
     x, names = _validate_eeg_input(values, sample_rate_hz, channel_names)
     n_channels = x.shape[1]

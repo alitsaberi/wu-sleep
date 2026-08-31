@@ -26,7 +26,7 @@ def fuse_probabilities(*probabilities: np.ndarray) -> np.ndarray:
     """Fuse posterior probabilities from independently scored channels.
 
     Channel posteriors are summed per epoch, then renormalized to sum to 1.
-    Fusion is order-invariant and matches the WU-Sleep preprint (Section 2.8).
+    Fusion is order-invariant.
 
     Each input array must have shape ``(n_epochs, n_classes)``.
     """

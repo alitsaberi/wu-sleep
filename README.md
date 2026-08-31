@@ -202,7 +202,7 @@ examples/output/example.png
 
 If you use WU-Sleep in your research, please cite:
 
-> **WU-Sleep citation will be added when the preprint becomes available.**
+> **WU-Sleep citation will be added when available.**
 
 ## Model lineage
 
