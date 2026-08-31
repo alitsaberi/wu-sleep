@@ -81,11 +81,39 @@ def _score_preprocessed(
     return np.asarray(epochs.labels, dtype=object)
 
 
-def _labels_from_probabilities(
+def labels_from_probabilities(
     probabilities: np.ndarray,
-    class_labels: list[str],
+    class_labels: list[str] | None = None,
 ) -> np.ndarray:
+    """Convert per-epoch class probabilities to class indices or labels.
+
+    Takes the argmax class index along the class axis for each epoch.
+
+    Args:
+        probabilities: Array of shape ``(n_epochs, n_classes)``.
+        class_labels: Optional label for each class index. When omitted, return
+            integer class indices. When provided, map each index to the
+            corresponding label (e.g. ``["W", "N1", "N2", "N3", "REM"]``).
+
+    Returns:
+        Array of shape ``(n_epochs,)``. ``int64`` class indices when
+        ``class_labels`` is ``None``, otherwise an object array of labels.
+    """
+    probabilities = np.asarray(probabilities)
+    if probabilities.ndim != 2:
+        raise ValueError(
+            f"probabilities must have shape (n_epochs, n_classes), got {probabilities.shape}"
+        )
+
     indices = np.argmax(probabilities, axis=1).astype(np.int64)
+    if class_labels is None:
+        return indices
+
+    if probabilities.shape[1] != len(class_labels):
+        raise ValueError(
+            f"probabilities has {probabilities.shape[1]} classes, but "
+            f"class_labels has {len(class_labels)} entries"
+        )
     return np.asarray([class_labels[int(i)] for i in indices], dtype=object)
 
 
@@ -97,7 +125,7 @@ def score_sleep_stages(
     output: OutputMode = "probs",
     channel_names: list[str] | None = None,
 ) -> np.ndarray:
-    """Run sleep-stage inference on forehead wearable EEG.
+    """Run sleep staging inference on forehead wearable EEG.
 
     Pass raw EEG as ``(n_samples, n_channels)``. The underlying model is
     single-channel. Each column is scored independently; channel posteriors are
@@ -140,4 +168,4 @@ def score_sleep_stages(
 
     if output == "probs":
         return fused
-    return _labels_from_probabilities(fused, model.metadata.class_labels)
+    return labels_from_probabilities(fused, model.metadata.class_labels)

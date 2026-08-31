@@ -1,6 +1,6 @@
 # WU-Sleep
 
-WU-Sleep is a domain-adapted sleep-staging model for single-channel forehead wearable EEG. It adapts U-Sleep, originally developed using conventional polysomnography, to the different electrode placement and signal characteristics in wearable forehead recordings.
+WU-Sleep is a domain-adapted sleep staging model for single-channel forehead wearable EEG. It adapts U-Sleep, originally developed using conventional polysomnography, to the different electrode placement and signal characteristics in wearable forehead recordings.
 
 This repository provides the fine-tuned model together with a lightweight Python interface for preprocessing EEG, running inference, and combining predictions from multiple forehead channels.
 
@@ -96,7 +96,16 @@ returns a `float64` array with shape `(n_epochs, n_classes)`. Each row contains 
 score_sleep_stages(..., output="labels")
 ```
 
-returns an object array with shape `(n_epochs,)`, containing one sleep-stage label per epoch.
+returns an object array with shape `(n_epochs,)`, containing one sleep stage label per epoch.
+
+To convert existing probability arrays without re-running inference:
+
+```python
+from wu_sleep import labels_from_probabilities
+
+indices = labels_from_probabilities(probs)  # int64 class indices
+labels = labels_from_probabilities(probs, ["W", "N1", "N2", "N3", "REM"])
+```
 
 The probability columns follow this order:
 
@@ -156,12 +165,26 @@ labels = score_sleep_stages(
 )
 ```
 
-## Example
+## Examples
 
-Run the included example with:
+Minimal synthetic demo:
 
 ```bash
-uv run python examples/score_recording.py
+uv run python examples/score_synthetic.py
+```
+
+Full-night EEG-only example with LEFT, RIGHT, and fused scoring, plus expert ground truth:
+
+```bash
+uv run --group dev python examples/score_example.py
+```
+
+Data and outputs:
+
+```text
+examples/data/example.edf   # EEG_LEFT + EEG_RIGHT, ~10 h @ 128 Hz
+examples/data/example.ids   # expert hypnogram
+examples/output/example.png
 ```
 
 ## Citation
