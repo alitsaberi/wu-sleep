@@ -3,7 +3,8 @@ name = "wu-sleep"
 version = "0.1.0"
 description = "Inference API for WU-Sleep, a domain-adapted sleep staging model for forehead wearable EEG."
 readme = "README.md"
-license = { file = "LICENSE" }
+license = "MIT"
+license-files = ["LICENSE"]
 authors = [
     { name = "Ali Saberi", email = "ali.saberi96@gmail.com" },
 ]

@@ -198,6 +198,10 @@ examples/data/example.ids   # expert hypnogram
 examples/output/example.png
 ```
 
+Example output (ground truth vs LEFT, RIGHT, and fused predictions):
+
+![Example scoring output](assets/example.png)
+
 ## Citation
 
 If you use WU-Sleep in your research, please cite:
@@ -220,5 +224,5 @@ This repository is released under the [MIT License](LICENSE).
 ## TODO
 
 - [ ] Validate WU-Sleep on other forehead EEG devices and comparable bipolar montages.
-- [ ] Release the data-preparation, training, and evaluation code.
+- [ ] Release the data preparation, training, and evaluation code.
 - [ ] Integrate artifact detection into the inference pipeline.

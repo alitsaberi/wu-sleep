@@ -98,15 +98,29 @@ def labels_to_blocks(labels: np.ndarray, epoch_sec: float) -> list[Block]:
     return blocks
 
 
-def _style_panel_ax(ax: plt.Axes, ylabel: str) -> None:
-    ax.set_ylabel(ylabel, fontsize=8, rotation=0, ha="right", va="center", labelpad=28)
+def _style_panel_ax(ax: plt.Axes) -> None:
     ax.tick_params(axis="y", labelsize=7)
     ax.spines["top"].set_visible(False)
     ax.spines["right"].set_visible(False)
     ax.grid(axis="x", linestyle=":", linewidth=0.4, alpha=0.5)
 
 
-def draw_hypnodensity(ax: plt.Axes, probabilities: np.ndarray, ylabel: str) -> None:
+def _row_label(fig: plt.Figure, cell, text: str) -> None:
+    ax = fig.add_subplot(cell)
+    ax.axis("off")
+    ax.text(
+        1.0,
+        0.5,
+        text,
+        ha="right",
+        va="center",
+        rotation=90,
+        fontsize=8,
+        transform=ax.transAxes,
+    )
+
+
+def draw_hypnodensity(ax: plt.Axes, probabilities: np.ndarray) -> None:
     colors = [STAGE_COLORS[label] for label in CLASS_LABELS]
     hours = np.arange(len(probabilities)) * EPOCH_S / 3600.0
     stack = probabilities / np.clip(probabilities.sum(axis=1, keepdims=True), 1e-8, None)
@@ -114,10 +128,10 @@ def draw_hypnodensity(ax: plt.Axes, probabilities: np.ndarray, ylabel: str) -> N
     ax.set_ylim(0, 1)
     ax.set_yticks([0, 1])
     ax.set_yticklabels(["0", "1"], fontsize=7)
-    _style_panel_ax(ax, ylabel)
+    _style_panel_ax(ax)
 
 
-def draw_hypnogram(ax: plt.Axes, blocks: Sequence[Block], ylabel: str) -> None:
+def draw_hypnogram(ax: plt.Axes, blocks: Sequence[Block]) -> None:
     label_to_y = {lab: i for i, lab in enumerate(HYPNO_ORDER)}
     for block in blocks:
         lab = block.label if block.label in label_to_y else "UNKNOWN"
@@ -144,7 +158,7 @@ def draw_hypnogram(ax: plt.Axes, blocks: Sequence[Block], ylabel: str) -> None:
     ax.set_yticks(range(len(HYPNO_ORDER)))
     ax.set_yticklabels(HYPNO_ORDER, fontsize=7)
     ax.set_ylim(len(HYPNO_ORDER) - 0.5, -0.5)
-    _style_panel_ax(ax, ylabel)
+    _style_panel_ax(ax)
     ax.tick_params(axis="y", length=0)
 
 
@@ -193,9 +207,9 @@ def main() -> None:
     )
 
     pred_panels = [
-        ("Dens. LEFT", left_probs, "Pred LEFT", labels_from_probabilities(left_probs, CLASS_LABELS)),
-        ("Dens. RIGHT", right_probs, "Pred RIGHT", labels_from_probabilities(right_probs, CLASS_LABELS)),
-        ("Dens. fused", fused_probs, "Pred fused", labels_from_probabilities(fused_probs, CLASS_LABELS)),
+        ("LEFT", left_probs, labels_from_probabilities(left_probs, CLASS_LABELS)),
+        ("RIGHT", right_probs, labels_from_probabilities(right_probs, CLASS_LABELS)),
+        ("Fused", fused_probs, labels_from_probabilities(fused_probs, CLASS_LABELS)),
     ]
 
     duration_h = left_probs.shape[0] * EPOCH_S / 3600.0
@@ -209,17 +223,19 @@ def main() -> None:
     fig = plt.figure(figsize=(11.5, 0.85 * sum(height_ratios) + 1.0), constrained_layout=False)
     gs = GridSpec(
         len(height_ratios),
-        1,
+        2,
         figure=fig,
         height_ratios=height_ratios,
+        width_ratios=[0.28, 10],
         hspace=0.08,
-        left=0.16,
+        wspace=0.12,
+        left=0.025,
         right=0.98,
         top=0.96,
         bottom=0.04,
     )
 
-    ax_leg = fig.add_subplot(gs[0, 0])
+    ax_leg = fig.add_subplot(gs[0, :])
     ax_leg.axis("off")
     ax_leg.legend(
         handles=stage_legend_handles(),
@@ -233,15 +249,20 @@ def main() -> None:
     ax_leg.set_title("example", fontsize=11, pad=2)
 
     axes: list[plt.Axes] = []
-    ax_gt = fig.add_subplot(gs[1, 0])
-    draw_hypnogram(ax_gt, ground_truth, "Ground truth")
+    _row_label(fig, gs[1, 0], "Ground truth")
+    ax_gt = fig.add_subplot(gs[1, 1])
+    draw_hypnogram(ax_gt, ground_truth)
     axes.append(ax_gt)
 
-    for i, (dens_label, probs, hyp_label, labels) in enumerate(pred_panels):
-        dens_ax = fig.add_subplot(gs[2 + 2 * i, 0], sharex=axes[0])
-        hyp_ax = fig.add_subplot(gs[3 + 2 * i, 0], sharex=axes[0])
-        draw_hypnodensity(dens_ax, probs, dens_label)
-        draw_hypnogram(hyp_ax, labels_to_blocks(labels, EPOCH_S), hyp_label)
+    for i, (source, probs, labels) in enumerate(pred_panels):
+        dens_row = 2 + 2 * i
+        hyp_row = 3 + 2 * i
+        _row_label(fig, gs[dens_row, 0], f"{source}\nProbabilities")
+        _row_label(fig, gs[hyp_row, 0], f"{source}\nLabels")
+        dens_ax = fig.add_subplot(gs[dens_row, 1], sharex=axes[0])
+        hyp_ax = fig.add_subplot(gs[hyp_row, 1], sharex=axes[0])
+        draw_hypnodensity(dens_ax, probs)
+        draw_hypnogram(hyp_ax, labels_to_blocks(labels, EPOCH_S))
         axes.extend([dens_ax, hyp_ax])
 
     for ax in axes:
@@ -253,10 +274,9 @@ def main() -> None:
             ax.set_xlabel("Time (hours)", fontsize=9)
 
     OUTPUT_PATH.parent.mkdir(parents=True, exist_ok=True)
-    fig.savefig(OUTPUT_PATH, dpi=200, bbox_inches="tight")
-    fig.savefig(OUTPUT_PATH.with_suffix(".pdf"), bbox_inches="tight")
+    fig.savefig(OUTPUT_PATH, dpi=200)
     plt.close(fig)
-    print(f"Saved {OUTPUT_PATH} (+ .pdf)")
+    print(f"Saved {OUTPUT_PATH}")
 
 
 if __name__ == "__main__":
