@@ -6,7 +6,7 @@ from typing import get_args, Literal
 import numpy as np
 
 from somnio.data import TimeSeries
-from somnio.tasks.sleep_scoring.models.onnx import OnnxSleepScoringModel
+from somnio.tasks.sleep_scoring.models.tensorflow import TensorflowSleepScoringModel
 from somnio.tasks.sleep_scoring.score import score_sleep_stages as somnio_score_sleep_stages
 
 from wu_sleep.preprocessing import preprocess_eeg
@@ -53,7 +53,7 @@ def fuse_probabilities(*probabilities: np.ndarray) -> np.ndarray:
 def _score_preprocessed(
     ts: TimeSeries,
     *,
-    model: OnnxSleepScoringModel,
+    model: TensorflowSleepScoringModel,
     output: OutputMode = "probs",
 ) -> np.ndarray:
     _validate_output(output)
@@ -121,7 +121,7 @@ def score_sleep_stages(
     values: np.ndarray,
     *,
     sample_rate_hz: float,
-    model_path: str | Path = Path("model/wu-sleep.onnx"),
+    model_path: str | Path = Path("model/wu-sleep"),
     output: OutputMode = "probs",
     channel_names: list[str] | None = None,
 ) -> np.ndarray:
@@ -145,7 +145,8 @@ def score_sleep_stages(
     Args:
         values: EEG array, shape ``(n_samples, n_channels)``.
         sample_rate_hz: Nominal sample rate of ``values`` in Hz.
-        model_path: ONNX model path. Sidecar metadata is discovered next to it.
+        model_path: TensorFlow SavedModel directory. Sidecar metadata is
+            auto-discovered as ``model.yaml`` inside the directory.
         output: ``"probs"`` or ``"labels"``.
         channel_names: Optional channel names, one per column (e.g. ``["EEG_L", "EEG_R"]``).
             Defaults to ``["ch0", ...]`` when omitted.
@@ -157,7 +158,7 @@ def score_sleep_stages(
         - If ``output="labels"``: object array of shape ``(n_epochs,)``.
     """
     _validate_output(output)
-    model = OnnxSleepScoringModel.load(model_path)
+    model = TensorflowSleepScoringModel.load(model_path)
     ts = preprocess_eeg(values, sample_rate_hz, channel_names=channel_names)
 
     channel_probs = [

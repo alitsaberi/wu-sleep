@@ -11,13 +11,14 @@ The model itself is single-channel. It processes each EEG derivation independent
 | Property              | Value                               |
 | --------------------- | ----------------------------------- |
 | Input                 | Single-channel bipolar forehead EEG |
-| Context window        | 35 consecutive 30-second epochs     |
+| Context window        | Variable-length (one-shot)          |
 | Prediction resolution | 30 seconds                          |
 | Output classes        | `W`, `N1`, `N2`, `N3`, `REM`        |
 
 ## Requirements
 
 - **Python:** `>=3.10`
+- **TensorFlow:** pulled in via `somnio[tensorflow]`
 
 ## Installation
 
@@ -126,27 +127,29 @@ The probability columns follow this order:
 | 4     | `REM` |
 
 
-This order matches `class_labels` in `model/wu-sleep.yaml`.
+This order matches `class_labels` in `model/wu-sleep/model.yaml`.
 
 ## Model files
 
-The fine-tuned model and its metadata are included in this repository:
+The fine-tuned model is a TensorFlow SavedModel directory with sidecar metadata:
 
 ```text
-model/
-├── wu-sleep.onnx
-└── wu-sleep.yaml
+model/wu-sleep/
+├── saved_model.pb
+├── variables/
+├── assets/
+└── model.yaml
 ```
 
-Clone the repository or download a versioned release to obtain both files.
+Clone the repository or download a versioned release to obtain the model directory.
 
 The default model path is:
 
 ```text
-model/wu-sleep.onnx
+model/wu-sleep
 ```
 
-This path is resolved relative to the current working directory. Pass an absolute path when running the API from another location.
+This path is resolved relative to the current working directory. Pass an absolute path when running the API from another location. Sidecar metadata is auto-discovered as `model/wu-sleep/model.yaml` inside the SavedModel directory.
 
 ## Usage
 
@@ -157,7 +160,7 @@ from wu_sleep import score_sleep_stages
 labels = score_sleep_stages(
     eeg[:, :1],
     sample_rate_hz=256.0,
-    model_path="model/wu-sleep.onnx",
+    model_path="model/wu-sleep",
     channel_names=["F7-Fpz"],
     output="labels",
 )
@@ -166,7 +169,7 @@ labels = score_sleep_stages(
 labels = score_sleep_stages(
     eeg,
     sample_rate_hz=256.0,
-    model_path="model/wu-sleep.onnx",
+    model_path="model/wu-sleep",
     channel_names=["F7-Fpz", "F8-Fpz"],
     output="labels",
 )
