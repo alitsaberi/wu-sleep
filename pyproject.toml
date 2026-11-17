@@ -10,7 +10,7 @@ authors = [
 ]
 requires-python = ">=3.10"
 dependencies = [
-    "somnio[signal,schemas,onnx]>=0.2.0b3",
+    "somnio[signal,schemas,tensorflow]>=0.2.0",
 ]
 
 [project.optional-dependencies]

@@ -27,7 +27,7 @@ EXAMPLES_DIR = Path(__file__).resolve().parent
 REPO_ROOT = EXAMPLES_DIR.parent
 EDF_PATH = EXAMPLES_DIR / "data" / "example.edf"
 IDS_PATH = EXAMPLES_DIR / "data" / "example.ids"
-MODEL_PATH = REPO_ROOT / "model" / "wu-sleep.onnx"
+MODEL_PATH = REPO_ROOT / "model" / "wu-sleep"
 OUTPUT_PATH = EXAMPLES_DIR / "output" / "example.png"
 
 EEG_LEFT = "EEG_LEFT"
