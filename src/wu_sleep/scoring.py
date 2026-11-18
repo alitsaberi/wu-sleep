@@ -121,7 +121,7 @@ def score_sleep_stages(
     values: np.ndarray,
     *,
     sample_rate_hz: float,
-    model_path: str | Path = Path("model/wu-sleep"),
+    model_path: str | Path = Path("model/ft-am"),
     output: OutputMode = "probs",
     channel_names: list[str] | None = None,
 ) -> np.ndarray:
