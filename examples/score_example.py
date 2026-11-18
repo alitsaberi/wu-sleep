@@ -27,22 +27,25 @@ EXAMPLES_DIR = Path(__file__).resolve().parent
 REPO_ROOT = EXAMPLES_DIR.parent
 EDF_PATH = EXAMPLES_DIR / "data" / "example.edf"
 IDS_PATH = EXAMPLES_DIR / "data" / "example.ids"
-MODEL_PATH = REPO_ROOT / "model" / "wu-sleep"
+MODEL_PATH = REPO_ROOT / "model" / "ft-am"
 OUTPUT_PATH = EXAMPLES_DIR / "output" / "example.png"
 
 EEG_LEFT = "EEG_LEFT"
 EEG_RIGHT = "EEG_RIGHT"
 CLASS_LABELS = ["W", "N1", "N2", "N3", "REM"]
+# Hypnodensity stack order matches U-Time evaluation plots (Wake, REM, N1, N2, N3).
+DENSITY_ORDER = ["W", "REM", "N1", "N2", "N3"]
 EPOCH_S = 30.0
 
+# U-Time evaluation palette (utime.evaluation.plotting.STAGE_COLORS)
 STAGE_COLORS = {
-    "W": "#E8B84A",
-    "N1": "#8FBF6A",
-    "N2": "#2F6F4E",
-    "N3": "#1F4E79",
-    "REM": "#7A3E9D",
-    "UNKNOWN": "#A8AEB5",
-    "ARTIFACT": "#1C1C1C",
+    "W": "#E8E8E8",
+    "N1": "#87CEEB",
+    "N2": "#4A90D9",
+    "N3": "#1E3A5F",
+    "REM": "#2E8B57",
+    "UNKNOWN": "#B0B0B0",
+    "ARTIFACT": "#B0B0B0",
 }
 
 HYPNO_ORDER = ["W", "REM", "N1", "N2", "N3", "UNKNOWN", "ARTIFACT"]
@@ -121,9 +124,11 @@ def _row_label(fig: plt.Figure, cell, text: str) -> None:
 
 
 def draw_hypnodensity(ax: plt.Axes, probabilities: np.ndarray) -> None:
-    colors = [STAGE_COLORS[label] for label in CLASS_LABELS]
+    col_idx = [CLASS_LABELS.index(label) for label in DENSITY_ORDER]
+    colors = [STAGE_COLORS[label] for label in DENSITY_ORDER]
     hours = np.arange(len(probabilities)) * EPOCH_S / 3600.0
-    stack = probabilities / np.clip(probabilities.sum(axis=1, keepdims=True), 1e-8, None)
+    stack = probabilities[:, col_idx]
+    stack = stack / np.clip(stack.sum(axis=1, keepdims=True), 1e-8, None)
     ax.stackplot(hours, stack.T, colors=colors, alpha=0.92, lw=0)
     ax.set_ylim(0, 1)
     ax.set_yticks([0, 1])

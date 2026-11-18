@@ -127,29 +127,40 @@ The probability columns follow this order:
 | 4     | `REM` |
 
 
-This order matches `class_labels` in `model/wu-sleep/model.yaml`.
+This order matches `class_labels` in `model/ft-am/model.yaml`.
 
 ## Model files
 
-The fine-tuned model is a TensorFlow SavedModel directory with sidecar metadata:
+Each strategy ships as a TensorFlow SavedModel directory with sidecar metadata:
 
 ```text
-model/wu-sleep/
-├── saved_model.pb
-├── variables/
-├── assets/
-└── model.yaml
+model/
+├── ft-am/      # FT-AM (default): fine-tune with artifact masking, best test macro-F1 seed
+├── ft-noam/    # FT-noAM: fine-tune without artifact masking
+├── tfs-am/     # TFS-AM: train from scratch with artifact masking
+└── dt/         # DT: direct transfer (pretrained U-Sleep, no target-domain fine-tuning)
 ```
 
-Clone the repository or download a versioned release to obtain the model directory.
+Each directory contains:
+
+```text
+saved_model.pb
+variables/
+assets/
+model.yaml
+```
+
+`model/ft-am` is the default WU-Sleep product checkpoint (FT-AM, highest test macro-F1 among FT-AM seeds). The other directories are the best-by-test-macro-F1 checkpoints for the remaining manuscript EEG strategies.
+
+Clone the repository or download a versioned release to obtain the model directories.
 
 The default model path is:
 
 ```text
-model/wu-sleep
+model/ft-am
 ```
 
-This path is resolved relative to the current working directory. Pass an absolute path when running the API from another location. Sidecar metadata is auto-discovered as `model/wu-sleep/model.yaml` inside the SavedModel directory.
+This path is resolved relative to the current working directory. Pass an absolute path when running the API from another location. Sidecar metadata is auto-discovered as `model.yaml` inside the SavedModel directory.
 
 ## Usage
 
@@ -160,7 +171,7 @@ from wu_sleep import score_sleep_stages
 labels = score_sleep_stages(
     eeg[:, :1],
     sample_rate_hz=256.0,
-    model_path="model/wu-sleep",
+    model_path="model/ft-am",
     channel_names=["F7-Fpz"],
     output="labels",
 )
@@ -169,7 +180,7 @@ labels = score_sleep_stages(
 labels = score_sleep_stages(
     eeg,
     sample_rate_hz=256.0,
-    model_path="model/wu-sleep",
+    model_path="model/ft-am",
     channel_names=["F7-Fpz", "F8-Fpz"],
     output="labels",
 )
@@ -196,7 +207,7 @@ python examples/score_example.py
 Data and outputs:
 
 ```text
-examples/data/example.edf   # EEG_LEFT + EEG_RIGHT, ~10 h @ 128 Hz
+examples/data/example.edf   # EEG_LEFT + EEG_RIGHT, 9 h @ 256 Hz
 examples/data/example.ids   # expert hypnogram
 examples/output/example.png
 ```
@@ -204,7 +215,6 @@ examples/output/example.png
 Example output (ground truth vs LEFT, RIGHT, and fused predictions):
 
 ![Example scoring output](assets/example.png)
-
 ## Citation
 
 If you use WU-Sleep in your research, please cite:

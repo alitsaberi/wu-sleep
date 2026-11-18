@@ -11,7 +11,7 @@ import numpy as np
 
 from wu_sleep import score_sleep_stages
 
-MODEL_PATH = Path(__file__).resolve().parents[1] / "model" / "wu-sleep"
+MODEL_PATH = Path(__file__).resolve().parents[1] / "model" / "ft-am"
 SAMPLE_RATE_HZ = 256.0
 DURATION_S = 60.0
 
